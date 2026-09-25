@@ -109,7 +109,7 @@ export default function Page() {
   const maxWeight = Math.max(...input.weights, 1)
 
   const onMove = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.PointerEvent) => {
       if (dragging === null || !svgRef.current) return
       const r = svgRef.current.getBoundingClientRect()
       const y = ((e.clientY - r.top) / r.height) * H
@@ -156,7 +156,7 @@ export default function Page() {
   const btn = 'panel px-3 py-1.5 text-[11px] label transition-colors duration-150 hover:text-[var(--trace)] hover:border-[var(--trace-dim)]'
 
   return (
-    <main className="min-h-screen p-5 max-w-[1340px] mx-auto flex flex-col gap-3">
+    <main className="min-h-screen p-3 sm:p-5 max-w-[1340px] mx-auto flex flex-col gap-3">
       <header className="flex items-baseline justify-between border-b rule pb-3">
         <div className="flex items-baseline gap-3">
           <h1 className="text-sm font-semibold tracking-[0.3em] uppercase">Curvature</h1>
@@ -198,10 +198,11 @@ export default function Page() {
           ref={svgRef}
           viewBox={`0 0 ${W} ${H}`}
           className="w-full select-none block"
-          onMouseMove={onMove}
-          onMouseUp={() => setDragging(null)}
-          onMouseLeave={() => { setDragging(null); setHoverSeg(null) }}
-          style={{ cursor: dragging !== null ? 'ns-resize' : 'default' }}
+          onPointerMove={onMove}
+          onPointerUp={() => setDragging(null)}
+          onPointerCancel={() => setDragging(null)}
+          onPointerLeave={() => { setDragging(null); setHoverSeg(null) }}
+          style={{ cursor: dragging !== null ? 'ns-resize' : 'default', touchAction: 'none' }}
         >
           {/* liquidity strip — width is the share of the raise, height is the weight */}
           <text x={PAD.l - 8} y={PAD.t + STRIP_H / 2 + 3.5} textAnchor="end" fontSize={9} fill="var(--ink-dim)" className="label">liq</text>
@@ -213,7 +214,7 @@ export default function Page() {
             const h = Math.max(2, (w / maxWeight) * STRIP_H)
             const active = hoverSeg === i
             return (
-              <g key={`strip${i}`} onMouseEnter={() => setHoverSeg(i)} onMouseLeave={() => setHoverSeg(null)}>
+              <g key={`strip${i}`} onPointerEnter={() => setHoverSeg(i)} onPointerLeave={() => setHoverSeg(null)}>
                 <rect x={x0} y={PAD.t + STRIP_H - h} width={bw} height={h}
                   fill="var(--trace)" opacity={active ? 0.85 : 0.42} />
                 <rect x={x0} y={PAD.t} width={bw} height={STRIP_H} fill="transparent" />
@@ -267,21 +268,28 @@ export default function Page() {
             const x = xOf(crossings[i])
             const on = dragging === i
             return (
-              <g key={`h${i}`} onMouseDown={() => setDragging(i)} style={{ cursor: 'ns-resize' }}>
+              <g
+                key={`h${i}`}
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture?.(e.pointerId)
+                  setDragging(i)
+                }}
+                style={{ cursor: 'ns-resize', touchAction: 'none' }}
+              >
                 <line x1={PAD.l} x2={PAD.l + PW} y1={y} y2={y} stroke={on ? 'var(--trace)' : 'var(--trace-dim)'}
                   strokeWidth={on ? 1.25 : 0.6} />
                 <rect x={x - 6} y={y - 6} width={12} height={12} fill="var(--bg)" stroke="var(--trace)" strokeWidth={on ? 2.5 : 1.75} />
                 {on && (
                   <text x={x + 14} y={y - 10} fontSize={11} fill="var(--trace)">{fmtPrice(price)}</text>
                 )}
-                <rect x={PAD.l} y={y - 10} width={PW} height={20} fill="transparent" />
+                <rect x={PAD.l} y={y - 16} width={PW} height={32} fill="transparent" />
               </g>
             )
           })}
         </svg>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {[
           ['graduation', params ? `${fmtAmount(params.migrationQuoteThreshold.toString(), qDec)} ${qSym}` : '—'],
           [`final price (${qSym}/token)`, sim?.steps.length ? fmtPrice(sim.steps.at(-1)!.price) : '—'],
@@ -300,9 +308,9 @@ export default function Page() {
           <span className="label text-[10px]">liquidity weight per segment</span>
           <span className="label text-[10px]">wider band = more of the raise spent in that price range</span>
         </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5">
           {input.weights.map((w, i) => (
-            <div key={i} className="flex items-center gap-3" onMouseEnter={() => setHoverSeg(i)} onMouseLeave={() => setHoverSeg(null)}>
+            <div key={i} className="flex items-center gap-3" onPointerEnter={() => setHoverSeg(i)} onPointerLeave={() => setHoverSeg(null)}>
               <span className="label text-[10px] w-11" style={{ color: hoverSeg === i ? 'var(--trace)' : undefined }}>seg {i + 1}</span>
               <input type="range" className="knob flex-1" min={1} max={24} step={1} value={w}
                 onChange={(e) => setWeight(i, Number(e.target.value))} />

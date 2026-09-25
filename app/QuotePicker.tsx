@@ -84,7 +84,7 @@ export function QuotePicker({
       </button>
 
       {open && (
-        <div className="panel absolute z-20 mt-1 left-0 w-[340px] p-0" style={{ background: 'var(--panel)' }}>
+        <div className="panel absolute z-20 mt-1 left-0 w-[min(340px,calc(100vw-2rem))] p-0" style={{ background: 'var(--panel)' }}>
           <input
             autoFocus
             value={query}

@@ -104,7 +104,7 @@ export function LaunchPanel({
       </div>
 
       {/* what is actually being launched — the URL can lie about all of it */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-[10px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-[10px]">
         <div className="flex justify-between">
           <span className="label">quote mint</span>
           <span title={quoteMint}>{short(quoteMint)}</span>
@@ -144,7 +144,7 @@ export function LaunchPanel({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input
           className={field}
           style={{ borderColor: 'var(--grid)', color: 'var(--ink)' }}
