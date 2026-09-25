@@ -5,6 +5,8 @@ import { buildParams, DEFAULTS, PRESETS, type CurveInput } from '../src/config'
 import { QuotePicker, SOL_QUOTE, type Quote } from './QuotePicker'
 import { simulate, validateCurve, type SimResult } from '../src/sim'
 import { decode, encode } from '../src/share'
+import { LaunchPanel } from './LaunchPanel'
+import { CLUSTER, IS_MAINNET } from '../src/cluster'
 
 const W = 1000
 const H = 545
@@ -156,7 +158,16 @@ export default function Page() {
   return (
     <main className="min-h-screen p-5 max-w-[1340px] mx-auto flex flex-col gap-3">
       <header className="flex items-baseline justify-between border-b rule pb-3">
-        <h1 className="text-sm font-semibold tracking-[0.3em] uppercase">Curvature</h1>
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-sm font-semibold tracking-[0.3em] uppercase">Curvature</h1>
+          {IS_MAINNET ? (
+            <span className="text-[10px] px-2 py-0.5" style={{ background: 'var(--warn)', color: '#07090b', letterSpacing: '0.08em' }}>
+              MAINNET
+            </span>
+          ) : (
+            <span className="label text-[10px] px-2 py-0.5 border rule">{CLUSTER}</span>
+          )}
+        </div>
         <p className="label text-[11px]">meteora dbc · tune a bonding curve</p>
       </header>
 
@@ -300,6 +311,8 @@ export default function Page() {
           ))}
         </div>
       </div>
+
+      <LaunchPanel input={input} params={params} sim={sim} errors={errors} />
 
       {errors.length > 0 && (
         <div className="panel p-3" style={{ borderColor: 'var(--warn)' }}>

@@ -28,6 +28,8 @@ Built for the **Best use of Meteora's Dynamic Bonding Curve** track, Crypto Worl
   readable, editable by hand, diffable.
 - **Validate** — the two rules the SDK does not check but the program enforces are caught
   before you ever sign a transaction.
+- **Launch** — connect a wallet and put the curve on chain: `createConfig`, then
+  `createPool`, with a live progress readout and explorer links.
 
 ## Why the simulation can be trusted
 
@@ -57,6 +59,29 @@ Run it yourself: `npm run sim:validate` (needs a funded devnet keypair).
 
 Two of those are enforced only on-chain, so the SDK lets you pay for a transaction that
 cannot succeed. Curvature checks them client-side. See [FEEDBACK.md](FEEDBACK.md).
+
+## Launching safely
+
+Everything that spends SOL goes through one gate. A curve can be perfectly legal on chain
+and still be nonsense or a trap, so `src/preflight.ts` blocks a launch unless the curve
+graduates in simulation, the fee schedule is inside a 0.25%–10% band, the graduation
+threshold is not dust or unreachable, and the quote mint's on-chain decimals match the
+decimals the curve was priced for — a mismatch mis-prices every level by 10^delta and the
+program raises nothing.
+
+Three deliberate choices:
+
+- **Mainnet is opt-in by an exact string.** `NEXT_PUBLIC_CLUSTER === 'mainnet-beta'`, never
+  a `??` fallback, so a missing env var lands on devnet rather than on real money. Before
+  any signature the app compares the RPC's genesis hash to the expected cluster: a UI label
+  can lie, a genesis hash cannot.
+- **Two transactions, not `createConfigAndPool`.** The atomic path serializes past the
+  1232-byte limit at 9 curve points (measured: 8 pts 1202B, 9 pts 1234B) — exactly the
+  elaborate curves this studio exists to make. Splitting means a config can outlive a failed
+  pool leg, so its address is persisted and offered as a resume instead of paying rent twice.
+- **Token metadata is served by this app.** Configs are `Immutable`, so whoever controls the
+  metadata URL controls every launched token's identity forever. `/t?s=TICKER&n=Name`
+  keeps that where the launcher is, with no paid storage.
 
 ## On-chain cost, measured
 

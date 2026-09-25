@@ -11,8 +11,6 @@
  */
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-static'
-
 const clean = (v: string | null, max: number) =>
   (v ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, max)
 
