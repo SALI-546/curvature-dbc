@@ -6,6 +6,10 @@
 import { DEFAULTS, WSOL, type CurveInput } from './config'
 import { MAX_CURVE_POINT } from '@meteora-ag/dynamic-bonding-curve-sdk'
 
+/** 10% ceiling, 0.25% floor — a curve outside this band is a trap, not a design. */
+export const MAX_FEE_BPS = 1000
+export const MIN_FEE_BPS = 25
+
 /** compact exponential, no trailing zeros: 1e-9, 4.237e-9, 1.5e-7 */
 const num = (n: number) => {
   const [m, e] = n.toExponential(4).split('e')
@@ -43,8 +47,16 @@ export function decode(search: string): CurveInput | null {
   for (let i = 1; i < prices.length; i++) if (prices[i] <= prices[i - 1]) return null
 
   const out: CurveInput = { ...DEFAULTS, prices, weights }
+  // A link is untrusted input. Unbounded fees passed every validator we had and were
+  // displayed nowhere, so ?f=9900,9899 turned a shared curve into a 99% fee trap.
   const f = q.get('f')?.split(',').map(Number)
-  if (f?.length === 2 && f.every(Number.isFinite) && f[0] >= f[1] && f[1] >= 0) {
+  if (
+    f?.length === 2 &&
+    f.every(Number.isFinite) &&
+    f[0] >= f[1] &&
+    f[0] <= MAX_FEE_BPS &&
+    f[1] >= MIN_FEE_BPS
+  ) {
     out.startingFeeBps = f[0]
     out.endingFeeBps = f[1]
   }
