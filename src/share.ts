@@ -3,7 +3,7 @@
  * Kept human-readable on purpose — ?p=1e-9,5e-9,3e-8&w=1,3&f=300,100 can be read,
  * edited and diffed by hand, which a base64 blob cannot.
  */
-import { DEFAULTS, type CurveInput } from './config'
+import { DEFAULTS, WSOL, type CurveInput } from './config'
 import { MAX_CURVE_POINT } from '@meteora-ag/dynamic-bonding-curve-sdk'
 
 /** compact exponential, no trailing zeros: 1e-9, 4.237e-9, 1.5e-7 */
@@ -18,6 +18,11 @@ export function encode(input: CurveInput): string {
   q.set('w', input.weights.join(','))
   const f = [input.startingFeeBps ?? 300, input.endingFeeBps ?? 100]
   if (f[0] !== 300 || f[1] !== 100) q.set('f', f.join(','))
+  if (input.quoteMint && input.quoteMint !== WSOL) {
+    q.set('q', input.quoteMint)
+    if (input.quoteSymbol) q.set('qs', input.quoteSymbol)
+    if (input.quoteDecimals) q.set('qd', String(input.quoteDecimals))
+  }
   return q.toString()
 }
 
@@ -42,6 +47,15 @@ export function decode(search: string): CurveInput | null {
   if (f?.length === 2 && f.every(Number.isFinite) && f[0] >= f[1] && f[1] >= 0) {
     out.startingFeeBps = f[0]
     out.endingFeeBps = f[1]
+  }
+
+  const mint = q.get('q')
+  const dec = Number(q.get('qd'))
+  // base58 only, and the program accepts 6..9 decimals
+  if (mint && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint) && [6, 7, 8, 9].includes(dec)) {
+    out.quoteMint = mint
+    out.quoteSymbol = q.get('qs')?.slice(0, 12) || 'quote'
+    out.quoteDecimals = dec as CurveInput['quoteDecimals']
   }
   return out
 }

@@ -21,6 +21,10 @@ export interface CurveInput {
   prices: number[]
   /** liquidity weight per segment, length prices.length - 1 */
   weights: number[]
+  /** quote mint address; defaults to wrapped SOL */
+  quoteMint?: string
+  /** ticker shown in the readouts */
+  quoteSymbol?: string
   startingFeeBps?: number
   endingFeeBps?: number
   totalSupply?: number
@@ -28,9 +32,13 @@ export interface CurveInput {
   quoteDecimals?: TokenDecimal
 }
 
+export const WSOL = 'So11111111111111111111111111111111111111112'
+
 export const DEFAULTS: CurveInput = {
   prices: [1e-9, 5e-9, 3e-8, 2e-7, 1e-6],
   weights: [1, 3, 6, 2],
+  quoteMint: WSOL,
+  quoteSymbol: 'SOL',
   startingFeeBps: 300,
   endingFeeBps: 100,
   totalSupply: 1_000_000_000,

@@ -19,6 +19,11 @@ Built for the **Best use of Meteora's Dynamic Bonding Curve** track, Crypto Worl
   path, fee schedule, graduation threshold, total fees paid.
 - **Read** — a liquidity strip above the trace shows, per segment, how much of the raise
   is spent in that price range. Widen a weight, watch its band grow.
+- **Quote in anything badged** — a DBC quote mint that is not permissionless-supported
+  needs a `TokenBadge`, and only Meteora operators can mint one. The stock catalogue is
+  already provisioned, so the picker reads the live registry and resolves every badged
+  mint to a ticker: 2366 of 2367 on-chain badges, covering xStocks, Ondo and Backpack
+  equities. Changing the quote token changes the decimals, and therefore the curve math.
 - **Fork** — every curve lives in its URL. `?p=1e-9,5e-9,3e-8&w=1,3` is the whole design:
   readable, editable by hand, diffable.
 - **Validate** — the two rules the SDK does not check but the program enforces are caught
@@ -75,6 +80,7 @@ Devnet tooling (needs `~/.config/solana/devnet.json` with a little SOL):
 npm run devnet:proof   # create a real config + pool, print the measured cost
 npm run curve:limits   # probe what the program accepts
 npm run sim:validate   # prove the offline simulator matches the chain
+npm run badges         # refresh the quote-mint catalogue from mainnet
 ```
 
 ## Layout
@@ -85,6 +91,7 @@ npm run sim:validate   # prove the offline simulator matches the chain
 | `src/config.ts` | curve input → `ConfigParameters`, plus presets |
 | `src/share.ts` | URL codec for forking a curve |
 | `src/badges.ts` | live `TokenBadge` registry (stock-token quote mints) |
+| `app/QuotePicker.tsx` | quote-token picker over the badge catalogue |
 | `app/page.tsx` | the studio |
 | `scripts/` | devnet proofs, reproducible |
 | `brand.md` | design brief |

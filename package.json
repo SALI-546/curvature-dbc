@@ -8,7 +8,8 @@
     "start": "next start",
     "devnet:proof": "tsx scripts/devnet-proof.ts",
     "curve:limits": "tsx scripts/curve-limits.ts",
-    "sim:validate": "tsx scripts/sim-validate.ts"
+    "sim:validate": "tsx scripts/sim-validate.ts",
+    "badges": "tsx scripts/fetch-badges.ts"
   },
   "dependencies": {
     "@meteora-ag/dynamic-bonding-curve-sdk": "^1.5.12",

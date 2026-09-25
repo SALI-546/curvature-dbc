@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { buildParams, DEFAULTS, PRESETS, type CurveInput } from '../src/config'
+import { QuotePicker, SOL_QUOTE, type Quote } from './QuotePicker'
 import { simulate, validateCurve, type SimResult } from '../src/sim'
 import { decode, encode } from '../src/share'
 
@@ -21,7 +22,7 @@ const fmtPrice = (p: number) => {
   const m = p / 10 ** e
   return `${m.toFixed(2)}·10${sup(e)}`
 }
-const fmtSol = (lamports: string) => (Number(lamports) / 1e9).toFixed(3)
+const fmtAmount = (raw: string, decimals: number) => (Number(raw) / 10 ** decimals).toFixed(3)
 
 function useCurve(input: CurveInput) {
   return useMemo(() => {
@@ -122,7 +123,16 @@ export default function Page() {
     [dragging, lLo, lHi]
   )
 
-  const loadPreset = (k: string) => { setInput(PRESETS[k]); setBaseline(PRESETS[k]) }
+  const loadPreset = (k: string) =>
+    setInput((cur) => {
+      // a preset changes the shape, not the token you are raising in
+      const next = { ...PRESETS[k], quoteMint: cur.quoteMint, quoteSymbol: cur.quoteSymbol, quoteDecimals: cur.quoteDecimals }
+      setBaseline(next)
+      return next
+    })
+
+  const selectQuote = (q: Quote) =>
+    setInput((cur) => ({ ...cur, quoteMint: q.mint, quoteSymbol: q.symbol, quoteDecimals: q.decimals as CurveInput['quoteDecimals'] }))
   const setWeight = (i: number, v: number) =>
     setInput((cur) => { const weights = [...cur.weights]; weights[i] = v; return { ...cur, weights } })
 
@@ -139,6 +149,8 @@ export default function Page() {
         : { ...cur, prices: cur.prices.filter((_, i) => i !== cur.prices.length - 2), weights: cur.weights.slice(0, -1) })
 
   const segments = input.prices.length - 1
+  const qDec = input.quoteDecimals ?? 9
+  const qSym = (input.quoteSymbol ?? 'SOL').toLowerCase()
   const btn = 'panel px-3 py-1.5 text-[11px] label transition-colors duration-150 hover:text-[var(--trace)] hover:border-[var(--trace-dim)]'
 
   return (
@@ -157,6 +169,10 @@ export default function Page() {
             reset
           </button>
         )}
+        <QuotePicker
+          value={{ symbol: input.quoteSymbol ?? SOL_QUOTE.symbol, mint: input.quoteMint ?? SOL_QUOTE.mint }}
+          onSelect={selectQuote}
+        />
         <button onClick={copyLink} className={btn} style={copied ? { color: 'var(--trace)', borderColor: 'var(--trace-dim)' } : undefined}>
           {copied ? 'link copied' : 'copy link'}
         </button>
@@ -256,9 +272,9 @@ export default function Page() {
 
       <div className="grid grid-cols-4 gap-3">
         {[
-          ['graduation', params ? `${fmtSol(params.migrationQuoteThreshold.toString())} sol` : '—'],
-          ['final price', sim?.steps.length ? fmtPrice(sim.steps.at(-1)!.price) : '—'],
-          ['fee paid', sim ? `${fmtSol(sim.totalFee.toString())} sol` : '—'],
+          ['graduation', params ? `${fmtAmount(params.migrationQuoteThreshold.toString(), qDec)} ${qSym}` : '—'],
+          [`final price (${qSym}/token)`, sim?.steps.length ? fmtPrice(sim.steps.at(-1)!.price) : '—'],
+          ['fee paid', sim ? `${fmtAmount(sim.totalFee.toString(), qDec)} ${qSym}` : '—'],
           ['curve points', `${segments} / 16`],
         ].map(([k, v]) => (
           <div key={k} className="panel px-3 py-2">
