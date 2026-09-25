@@ -7,3 +7,13 @@ out/
 .DS_Store
 next-env.d.ts
 tsconfig.tsbuildinfo
+
+# keypairs — this repo is public, a stray secret key would be pushed without warning
+*keypair*.json
+*-keypair.json
+id.json
+wallet*.json
+devnet.json
+mainnet.json
+*.key
+*.pem
