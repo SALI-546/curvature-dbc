@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+
+:root {
+  --bg: #07090b;
+  --panel: #0d1114;
+  --grid: #1b2328;
+  --trace: #4ade80;
+  --trace-dim: #22643c;
+  --warn: #f5a524;
+  --ink: #c8d3d8;
+  --ink-dim: #5e6d75;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-grid: var(--grid);
+  --color-trace: var(--trace);
+  --color-trace-dim: var(--trace-dim);
+  --color-warn: var(--warn);
+  --color-ink: var(--ink);
+  --color-ink-dim: var(--ink-dim);
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+* { border-radius: 2px; }
+
+.panel { background: var(--panel); border: 1px solid var(--grid); }
+.rule  { border-color: var(--grid); }
+.label { color: var(--ink-dim); text-transform: lowercase; letter-spacing: 0.04em; }
+
+/* instrument controls — no browser chrome */
+input[type='range'].knob {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  outline: none;
+}
+input[type='range'].knob::-webkit-slider-runnable-track {
+  height: 22px;
+  background:
+    repeating-linear-gradient(to right, var(--grid) 0 1px, transparent 1px 12px) center/100% 10px no-repeat,
+    linear-gradient(var(--bg), var(--bg)) center/100% 10px no-repeat;
+  border: 1px solid var(--grid);
+}
+input[type='range'].knob::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 6px;
+  height: 20px;
+  margin-top: 1px;
+  background: var(--trace);
+  border: none;
+  cursor: ew-resize;
+}
+input[type='range'].knob:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 1px var(--bg), 0 0 0 2px var(--trace);
+}
+input[type='range'].knob::-moz-range-track {
+  height: 10px;
+  background: var(--bg);
+  border: 1px solid var(--grid);
+}
+input[type='range'].knob::-moz-range-thumb {
+  width: 6px;
+  height: 20px;
+  border-radius: 0;
+  background: var(--trace);
+  border: none;
+  cursor: ew-resize;
+}
