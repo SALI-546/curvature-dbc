@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PublicKey } from '@solana/web3.js'
 import type { ConfigParameters } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { useWallet } from './useWallet'
 import { CLUSTER, IS_MAINNET, EXPLORER } from '../src/cluster'
 import { preflight, isLaunchable, type Check } from '../src/preflight'
+import { lookupMint, type MintLookup } from '../src/mint'
 import { WSOL, type CurveInput } from '../src/config'
 import type { SimResult } from '../src/sim'
 import type { LaunchProgress, LaunchResult } from '../src/launch'
@@ -40,7 +41,52 @@ export function LaunchPanel({
   const [result, setResult] = useState<LaunchResult | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
 
-  const checks = useMemo(() => preflight({ input, params, sim, errors }), [input, params, sim, errors])
+  const quoteMint = input.quoteMint ?? WSOL
+
+  // Read the mint before the user commits to anything. Without this the decimals
+  // mismatch and the wrong-cluster case only surfaced inside launch(), after the form was
+  // filled and the button clicked.
+  const [chain, setChain] = useState<
+    { state: 'loading' } | { state: 'done'; found: MintLookup } | { state: 'error'; message: string }
+  >({ state: 'loading' })
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    setChain({ state: 'loading' })
+
+    // PublicKey throws synchronously on a string that is base58 but not 32 bytes, which
+    // would escape the promise chain and take the whole studio down with it
+    let key: PublicKey
+    try {
+      key = new PublicKey(quoteMint)
+    } catch {
+      setChain({ state: 'error', message: `${quoteMint} is not a valid address` })
+      return
+    }
+
+    lookupMint(key)
+      .then((found) => !cancelled && setChain({ state: 'done', found }))
+      .catch((e: unknown) => !cancelled && setChain({ state: 'error', message: (e as Error).message }))
+    return () => {
+      cancelled = true
+    }
+  }, [quoteMint, attempt])
+
+  const found = chain.state === 'done' ? chain.found : null
+
+  const checks = useMemo(
+    () =>
+      preflight({
+        input,
+        params,
+        sim,
+        errors,
+        onChainQuoteDecimals: found?.kind === 'ok' ? found.decimals : undefined,
+        quoteMintProblem: found && found.kind !== 'ok' ? found.kind : undefined,
+      }),
+    [input, params, sim, errors, found]
+  )
   const blocks = checks.filter((c) => c.level === 'block')
   const warns = checks.filter((c) => c.level === 'warn')
 
@@ -49,9 +95,14 @@ export function LaunchPanel({
   // on mainnet the user retypes the ticker: a misclick must not be able to spend real SOL
   const confirmOk = !IS_MAINNET || confirm.trim().toUpperCase() === sym
   const busy = progress !== null && progress.phase !== 'done'
-  const ready = isLaunchable(checks) && identityOk && confirmOk && w.launchWallet !== null && !busy
+  const ready =
+    isLaunchable(checks) &&
+    identityOk &&
+    confirmOk &&
+    w.launchWallet !== null &&
+    !busy &&
+    found?.kind === 'ok'
 
-  const quoteMint = input.quoteMint ?? WSOL
   const startBps = input.startingFeeBps ?? 300
   const endBps = input.endingFeeBps ?? 100
 
@@ -111,7 +162,21 @@ export function LaunchPanel({
         </div>
         <div className="flex justify-between">
           <span className="label">quote decimals</span>
-          <span>{input.quoteDecimals ?? 9}</span>
+          <span
+            style={
+              found?.kind === 'ok' && found.decimals !== (input.quoteDecimals ?? 9)
+                ? { color: 'var(--warn)' }
+                : undefined
+            }
+          >
+            {input.quoteDecimals ?? 9}
+            {chain.state === 'loading' && ' · reading chain…'}
+            {found?.kind === 'ok' &&
+              (found.decimals === (input.quoteDecimals ?? 9) ? ' · confirmed' : ` · chain says ${found.decimals}`)}
+            {found?.kind === 'absent' && ' · mint absent here'}
+            {found?.kind === 'not-a-mint' && ' · not a mint'}
+            {chain.state === 'error' && ' · lookup failed'}
+          </span>
         </div>
         <div className="flex justify-between">
           <span className="label">fee schedule</span>
@@ -200,6 +265,20 @@ export function LaunchPanel({
           </>
         )}
       </div>
+
+      {chain.state === 'error' && (
+        <div
+          className="border px-2 py-1.5 flex items-center justify-between gap-3"
+          style={{ borderColor: 'var(--warn)' }}
+        >
+          <span className="text-[10px]" style={{ color: 'var(--warn)' }}>
+            could not read the quote mint — {chain.message}
+          </span>
+          <button onClick={() => setAttempt((n) => n + 1)} className={btn}>
+            retry
+          </button>
+        </div>
+      )}
 
       {w.error && (
         <div className="text-[10px]" style={{ color: 'var(--warn)' }}>

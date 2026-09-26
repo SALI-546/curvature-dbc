@@ -25,6 +25,7 @@ import {
   type ConfigParameters,
 } from '@meteora-ag/dynamic-bonding-curve-sdk'
 import { badgeFor } from './badges'
+import { lookupMint } from './mint'
 import { assertCluster, connection, CLUSTER, type Cluster } from './network'
 
 /** What a Wallet Standard account gives us, narrowed to what we actually need. */
@@ -82,20 +83,6 @@ const writePendingConfig = (v: { cluster: Cluster; config: string } | null) => {
   }
 }
 
-/**
- * ConfigParameters carries no quote-decimals field; the value only ever enters through
- * createSqrtPrices. A disagreement with the mint's real decimals mis-prices the entire
- * curve by 10^delta and the program raises nothing, so we read the truth from chain.
- */
-export async function fetchQuoteDecimals(mint: PublicKey, conn = connection()): Promise<number> {
-  const info = await conn.getParsedAccountInfo(mint)
-  const parsed = info.value?.data
-  if (!parsed || !('parsed' in parsed)) throw new Error(`quote mint ${mint.toBase58()} not found on ${CLUSTER}`)
-  const decimals = parsed.parsed?.info?.decimals
-  if (typeof decimals !== 'number') throw new Error(`quote mint ${mint.toBase58()} has no decimals field`)
-  return decimals
-}
-
 /** Anchor hands back an unsigned legacy Transaction with neither field set. */
 async function prepare(tx: Transaction, payer: PublicKey, conn: Connection, extra: Keypair) {
   tx.feePayer = payer
@@ -136,7 +123,14 @@ export async function launch(opts: {
   // A UI label can lie about the network; a genesis hash cannot.
   await assertCluster()
 
-  const onChain = await fetchQuoteDecimals(quoteMint, conn)
+  const found = await lookupMint(quoteMint, conn)
+  if (found.kind === 'absent') {
+    throw new Error(`quote mint ${quoteMint.toBase58()} does not exist on ${CLUSTER}`)
+  }
+  if (found.kind === 'not-a-mint') {
+    throw new Error(`${quoteMint.toBase58()} exists on ${CLUSTER} but is not a token mint`)
+  }
+  const onChain = found.decimals
   if (onChain !== quoteDecimals) {
     throw new Error(
       `quote mint reports ${onChain} decimals on chain but this curve was priced for ${quoteDecimals} — refusing to launch a curve mispriced by 10^${onChain - quoteDecimals}`

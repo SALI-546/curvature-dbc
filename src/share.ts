@@ -4,7 +4,16 @@
  * edited and diffed by hand, which a base64 blob cannot.
  */
 import { DEFAULTS, WSOL, type CurveInput } from './config'
+import { PublicKey } from '@solana/web3.js'
 import { MAX_CURVE_POINT } from '@meteora-ag/dynamic-bonding-curve-sdk'
+
+const isPubkey = (v: string) => {
+  try {
+    return new PublicKey(v).toBase58() === v
+  } catch {
+    return false
+  }
+}
 
 /** 10% ceiling, 0.25% floor — a curve outside this band is a trap, not a design. */
 export const MAX_FEE_BPS = 1000
@@ -63,8 +72,10 @@ export function decode(search: string): CurveInput | null {
 
   const mint = q.get('q')
   const dec = Number(q.get('qd'))
-  // base58 only, and the program accepts 6..9 decimals
-  if (mint && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint) && [6, 7, 8, 9].includes(dec)) {
+  // The charset and length are not enough: a 40-character base58 string can still fail to
+  // decode to 32 bytes, and PublicKey throws synchronously when it does. Decode here, at
+  // the edge, so nothing downstream has to defend against it.
+  if (mint && isPubkey(mint) && [6, 7, 8, 9].includes(dec)) {
     out.quoteMint = mint
     out.quoteSymbol = q.get('qs')?.slice(0, 12) || 'quote'
     out.quoteDecimals = dec as CurveInput['quoteDecimals']

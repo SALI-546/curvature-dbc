@@ -30,6 +30,8 @@ export interface PreflightInput {
   errors: string[]
   /** decimals the chain reports for the quote mint, once known */
   onChainQuoteDecimals?: number
+  /** set once the chain has been asked and the answer was not a usable mint */
+  quoteMintProblem?: 'absent' | 'not-a-mint'
 }
 
 export function preflight({
@@ -38,6 +40,7 @@ export function preflight({
   sim,
   errors,
   onChainQuoteDecimals,
+  quoteMintProblem,
 }: PreflightInput): Check[] {
   const checks: Check[] = []
   const block = (message: string) => checks.push({ level: 'block', message })
@@ -72,6 +75,14 @@ export function preflight({
   if (end < MIN_FEE_BPS) block(`ending fee ${(end / 100).toFixed(2)}% is below the ${MIN_FEE_BPS / 100}% floor`)
   if (start < end) block('starting fee is below the ending fee — the schedule runs backwards')
   if (start >= 500) warn(`starting fee is ${(start / 100).toFixed(2)}% — buyers pay that on every early trade`)
+
+  // The badged stock mints only exist on mainnet, so picking one on devnet used to fail
+  // deep inside buildCreatePoolTx — after the form was filled and the button clicked.
+  if (quoteMintProblem === 'absent') {
+    block(`quote mint ${input.quoteMint ?? WSOL} does not exist on this cluster`)
+  } else if (quoteMintProblem === 'not-a-mint') {
+    block(`${input.quoteMint ?? WSOL} exists on this cluster but is not a token mint`)
+  }
 
   // ConfigParameters carries no quote-decimals field: the value enters only through
   // createSqrtPrices. A mismatch mis-prices the whole curve by 10^delta and the chain
