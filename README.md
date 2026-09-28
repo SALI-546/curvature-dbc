@@ -133,6 +133,7 @@ npm run badges         # refresh the quote-mint catalogue from mainnet
 | `app/page.tsx` | the studio |
 | `scripts/` | devnet proofs, reproducible |
 | `brand.md` | design brief |
+| `docs/PROJECT.md` | deadline, measured facts, non-negotiable rules, scope |
 | `FEEDBACK.md` | API feedback for Meteora |
 
 Built on [`@meteora-ag/dynamic-bonding-curve-sdk`](https://github.com/MeteoraAg/dynamic-bonding-curve-sdk)

@@ -1,5 +1,7 @@
 # Curvature — project brief
 
+Deadline, measured facts, non-negotiable rules and scope for this repository.
+
 A Meteora Dynamic Bonding Curve design studio: sculpt a curve, simulate it to graduation
 offline, launch it on chain. Entry for **Best use of Meteora's DBC**, Crypto World's Fair.
 
