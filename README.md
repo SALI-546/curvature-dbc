@@ -15,6 +15,11 @@ we could find. And the reason Curvature signs two transactions instead of the ob
 9 curve points, so it breaks silently on exactly the elaborate curves a curve tool exists
 to make.
 
+**Live: [curvature-dbc.vercel.app](https://curvature-dbc.vercel.app)** — no wallet needed to
+try it. The whole simulator runs in the browser, and a curve is a shareable URL:
+[the cliff preset](https://curvature-dbc.vercel.app/?p=1e-9,1.2e-9,1.5e-9,1e-6&w=1,1,20) puts
+one segment across the entire raise.
+
 Built for the **Best use of Meteora's Dynamic Bonding Curve** track, Crypto World's Fair.
 
 ---
