@@ -2,10 +2,18 @@
 
 **A bonding curve is a waveform. Curvature is the instrument you tune it on.**
 
-Meteora's Dynamic Bonding Curve lets you shape a token launch across up to 16 liquidity
-points — but the only way to see what a curve actually does is to create it on-chain and
-watch. Curvature simulates the whole launch, from first buy to graduation, entirely
-offline: no RPC, no wallet, no SOL. Then it launches the curve you designed.
+Meteora shipped stock tokens as a DBC quote mint on 9 September 2026. Curvature is built
+around that: design a bonding curve across up to 16 liquidity points, price it in **any of
+the 2366 badged quote mints** — xStocks, Ondo and Backpack equities alongside SOL — simulate
+the whole launch to graduation offline, then put it on chain.
+
+Every number here was measured against the chain rather than modelled. The simulator is
+bit-exact against the program's own swap math across 200 amounts. The on-chain cost of a
+launch (0.00598408 SOL for a config, 0.02059164 SOL for a pool) was not documented anywhere
+we could find. And the reason Curvature signs two transactions instead of the obvious
+`createConfigAndPool` is a measured one: that path serialises past the 1232-byte limit at
+9 curve points, so it breaks silently on exactly the elaborate curves a curve tool exists
+to make.
 
 Built for the **Best use of Meteora's Dynamic Bonding Curve** track, Crypto World's Fair.
 
@@ -96,7 +104,7 @@ Rent is identical on devnet and mainnet:
 
 ```bash
 npm install
-npm run dev            # http://localhost:3000
+npm run dev            # http://localhost:3111
 ```
 
 Devnet tooling (needs `~/.config/solana/devnet.json` with a little SOL):

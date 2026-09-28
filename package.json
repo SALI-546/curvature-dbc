@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3111",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3111",
     "devnet:proof": "tsx scripts/devnet-proof.ts",
     "curve:limits": "tsx scripts/curve-limits.ts",
     "sim:validate": "tsx scripts/sim-validate.ts",
@@ -33,5 +33,9 @@
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3"
-  }
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "packageManager": "npm@10.8.2"
 }
