@@ -11,7 +11,8 @@
     "sim:validate": "tsx scripts/sim-validate.ts",
     "badges": "tsx scripts/fetch-badges.ts",
     "launch:devnet": "tsx scripts/launch-devnet.ts",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "launch:mainnet": "tsx scripts/launch-mainnet.ts"
   },
   "dependencies": {
     "@meteora-ag/dynamic-bonding-curve-sdk": "^1.5.12",
