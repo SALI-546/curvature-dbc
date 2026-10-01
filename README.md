@@ -73,6 +73,26 @@ Run it yourself: `npm run sim:validate` (needs a funded devnet keypair).
 Two of those are enforced only on-chain, so the SDK lets you pay for a transaction that
 cannot succeed. Curvature checks them client-side. See [FEEDBACK.md](FEEDBACK.md).
 
+## Live on mainnet
+
+A token priced in **NVDAx** — NVIDIA's tokenized share — launched with Curvature on Solana
+mainnet, not devnet:
+
+| | |
+|---|---|
+| pool | [`FciaqVNGbBAbQ36eXwpE9gHdtwr4Dt2GaLoxTtg8gDBW`](https://solscan.io/address/FciaqVNGbBAbQ36eXwpE9gHdtwr4Dt2GaLoxTtg8gDBW) |
+| base mint | `6fu44YULP6STJoJYhXUYmNUTPHuvBJ3NHwJFGywbx1ye` |
+| config | [`GKyiUSkU8CbmsKAHpncmXXFf4Zi4mZAJcmYHceJ83sC`](https://solscan.io/address/GKyiUSkU8CbmsKAHpncmXXFf4Zi4mZAJcmYHceJ83sC) |
+| quote mint | `Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh` (NVDAx, 8 decimals) |
+| graduation | 1.47120666 NVDAx, across 4 curve segments |
+| cost | 0.02662652 SOL, config + pool |
+
+DBC 0.2.1 made stock tokens usable as a quote mint on 9 September 2026. This pool exercises
+that: `createConfig` and `createPool` both carry the mint's `TokenBadge` as remaining account
+0, which WSOL neither needs nor accepts. Reproduce with
+`NEXT_PUBLIC_CLUSTER=mainnet-beta npm run launch:mainnet -- nvda` — it dry-runs unless you
+pass `--confirm`.
+
 ## Launching safely
 
 Everything that spends SOL goes through one gate. A curve can be perfectly legal on chain

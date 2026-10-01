@@ -85,20 +85,48 @@ const writePendingConfig = (v: { cluster: Cluster; config: string } | null) => {
 
 /** Anchor hands back an unsigned legacy Transaction with neither field set. */
 async function prepare(tx: Transaction, payer: PublicKey, conn: Connection, extra: Keypair) {
+  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash('confirmed')
   tx.feePayer = payer
-  tx.recentBlockhash = (await conn.getLatestBlockhash('confirmed')).blockhash
+  tx.recentBlockhash = blockhash
   tx.partialSign(extra)
-  return tx
+  return { tx, blockhash, lastValidBlockHeight }
 }
 
-async function sendSigned(tx: Transaction, conn: Connection): Promise<TransactionSignature> {
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/**
+ * An expired blockhash window is not proof of failure.
+ *
+ * The first mainnet launch threw "block height exceeded" on a config transaction that had
+ * in fact finalised, which cost the run its config address. So when the window closes, ask
+ * the chain what actually happened instead of believing the timeout.
+ */
+async function sendSigned(
+  prepared: { tx: Transaction; blockhash: string; lastValidBlockHeight: number },
+  conn: Connection
+): Promise<TransactionSignature> {
   // the wallet's signature is present but the SDK's verifier does not know that yet
-  const raw = tx.serialize({ requireAllSignatures: false, verifySignatures: false })
+  const raw = prepared.tx.serialize({ requireAllSignatures: false, verifySignatures: false })
   const sig = await conn.sendRawTransaction(raw, { preflightCommitment: 'confirmed' })
-  const bh = await conn.getLatestBlockhash('confirmed')
-  const res = await conn.confirmTransaction({ signature: sig, ...bh }, 'confirmed')
-  if (res.value.err) throw new Error(`transaction ${sig} failed: ${JSON.stringify(res.value.err)}`)
-  return sig
+
+  try {
+    const res = await conn.confirmTransaction(
+      { signature: sig, blockhash: prepared.blockhash, lastValidBlockHeight: prepared.lastValidBlockHeight },
+      'confirmed'
+    )
+    if (res.value.err) throw new Error(`transaction ${sig} failed: ${JSON.stringify(res.value.err)}`)
+    return sig
+  } catch (timeout) {
+    for (let i = 0; i < 30; i++) {
+      const { value } = await conn.getSignatureStatus(sig, { searchTransactionHistory: true })
+      if (value?.err) throw new Error(`transaction ${sig} failed: ${JSON.stringify(value.err)}`)
+      if (value?.confirmationStatus === 'confirmed' || value?.confirmationStatus === 'finalized') return sig
+      await sleep(2000)
+    }
+    throw new Error(
+      `transaction ${sig} did not confirm in time and is still unknown to the chain — check it before retrying: ${sig}`
+    )
+  }
 }
 
 export async function launch(opts: {
@@ -159,13 +187,13 @@ export async function launch(opts: {
       tokenBadge,
       ...params,
     })
-    await prepare(tx, payer, conn, configKp)
+    const prepared = await prepare(tx, payer, conn, configKp)
 
     step({ phase: 'awaiting-config-signature', config: configKp.publicKey.toBase58() })
-    const signed = await wallet.signTransaction(tx)
+    prepared.tx = await wallet.signTransaction(prepared.tx)
 
     step({ phase: 'confirming-config', config: configKp.publicKey.toBase58() })
-    configTx = await sendSigned(signed, conn)
+    configTx = await sendSigned(prepared, conn)
     config = configKp.publicKey
 
     // from here a pool failure costs only a retry, not a second config
@@ -186,7 +214,7 @@ export async function launch(opts: {
     poolCreator: payer,
     tokenBadge,
   })
-  await prepare(poolTxRaw, payer, conn, baseMintKp)
+  const preparedPool = await prepare(poolTxRaw, payer, conn, baseMintKp)
 
   step({
     phase: 'awaiting-pool-signature',
@@ -194,10 +222,10 @@ export async function launch(opts: {
     configTx,
     baseMint: baseMintKp.publicKey.toBase58(),
   })
-  const signedPool = await wallet.signTransaction(poolTxRaw)
+  preparedPool.tx = await wallet.signTransaction(preparedPool.tx)
 
   step({ phase: 'confirming-pool', config: config.toBase58(), configTx })
-  const poolTx = await sendSigned(signedPool, conn)
+  const poolTx = await sendSigned(preparedPool, conn)
 
   const { deriveDbcPoolAddress } = await import('@meteora-ag/dynamic-bonding-curve-sdk')
   const pool = deriveDbcPoolAddress(quoteMint, baseMintKp.publicKey, config)

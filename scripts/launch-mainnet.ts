@@ -42,6 +42,8 @@ const sol = (lamports: number) => (lamports / 1e9).toFixed(9)
 async function main() {
   const which = process.argv.find((a) => a in TOKENS) ?? 'sol'
   const confirmed = process.argv.includes('--confirm')
+  const configFlag = process.argv.indexOf('--config')
+  const reuseConfig = configFlag > -1 ? new PublicKey(process.argv[configFlag + 1]) : undefined
   const token = TOKENS[which]
 
   if (CLUSTER !== 'mainnet-beta') {
@@ -96,7 +98,8 @@ async function main() {
   console.log('graduation ', threshold.toFixed(4), token.quoteDecimals === 9 ? 'SOL' : 'quote units')
   console.log('segments   ', input.prices.length - 1)
   console.log('metadata   ', uri)
-  console.log('est. cost  ', '0.026575720 SOL')
+  console.log('est. cost  ', reuseConfig ? '0.020591640 SOL (pool only)' : '0.026575720 SOL')
+  if (reuseConfig) console.log('reusing    ', reuseConfig.toBase58())
   console.log()
   console.log('preflight  ', isLaunchable(checks) ? 'LAUNCHABLE' : 'BLOCKED')
   checks.forEach((c) => console.log(`   ${c.level}: ${c.message}`))
@@ -117,7 +120,17 @@ async function main() {
     quoteDecimals: token.quoteDecimals,
     token: { name: token.name, symbol: token.symbol, uri },
     wallet,
-    onProgress: (p) => console.log('  →', p.phase),
+    existingConfig: reuseConfig,
+    // print every address the moment it exists: a confirmation timeout once cost this
+    // script a config whose rent had already been paid
+    onProgress: (p) =>
+      console.log(
+        '  →',
+        p.phase,
+        [p.config && `config=${p.config}`, p.baseMint && `mint=${p.baseMint}`, p.configTx && `configTx=${p.configTx}`]
+          .filter(Boolean)
+          .join('  ')
+      ),
   })
 
   const after = await connection().getBalance(kp.publicKey)
