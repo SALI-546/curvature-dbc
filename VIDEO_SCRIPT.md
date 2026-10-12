@@ -26,24 +26,40 @@ the readouts recompute twice. Do not rush — this is the shot that sells the pr
 
 ## 0:10 – 0:28 · The thing no other tool shows
 
-**Do:** click the preset **`long`**. Hold still on the liquidity strip at the top.
+**Open this exact URL** so the state is right without fiddling:
 
-Point the cursor at the first four bands — they are slivers.
+```
+https://curvature-dbc.vercel.app/?p=1e-9,2e-9,4e-9,1e-8,5e-8,5e-7,1e-6&w=1,1,2,4,8,12
+```
+
+**Do:** hold still on the liquidity strip at the top. Run the cursor along the first four
+bands — they are slivers. Let `graduation 90.87 sol` be readable.
 
 **Text on screen:**
 > Meteora's DBC spreads a launch over up to 16 liquidity points.
 > This curve uses 6. Four of them are dead:
-> 92% of the raise happens in the last two.
+> 92% of the raise happens in the last two segments.
 
 ---
 
 ## 0:28 – 0:42 · Fix it live
 
-**Do:** drag the 2nd, 3rd and 4th price handles apart from each other. The bands widen as
-you pull. Let the `graduation` readout change on camera.
+**Do:** drag the **liquidity weight sliders** at the bottom, in order: seg 1 up to 12,
+seg 2 up to 8, seg 3 to 4, seg 4 to 2, seg 5 and 6 down to 1. Sliders are far easier to
+grab cleanly on camera than the handles on the trace.
+
+Watch the strip: the four dead bands fill out, and `graduation` falls from **90.87** to
+**7.22 sol** while you drag. That number dropping is the shot.
+
+If a drag goes wrong mid-take, just open the finished state and keep filming:
+
+```
+https://curvature-dbc.vercel.app/?p=1e-9,2e-9,4e-9,1e-8,5e-8,5e-7,1e-6&w=12,8,4,2,1,1
+```
 
 **Text on screen:**
-> Widen the price bands and the dead segments come alive.
+> Same price ladder. Only the liquidity weights moved.
+> Graduation: 90.87 SOL → 7.22 SOL.
 > Every number recomputes offline — no RPC, no wallet, no SOL.
 
 ---
